@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import korvilLogo from '../../assets/korvil-logo.png';
+import korvilLogo from '../../assets/logo';
 
 export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -82,7 +82,13 @@ export default function Login() {
       <div className="login-container">
         <div className="login-brand">
           <div className="logo-wrapper">
-            <img src={korvilLogo} alt="Korvil" />
+            <img
+              src={korvilLogo}
+              alt="Korvil"
+              onError={(e) => {
+                e.currentTarget.src = './korvil-logo.png';
+              }}
+            />
           </div>
           <h1>Korvil TaskFlow</h1>
           <p>Smart task management for teams</p>
