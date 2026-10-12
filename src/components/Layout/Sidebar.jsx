@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import korvilLogo from '../../assets/korvil-logo.png';
 import {
   FiGrid,
   FiCheckSquare,
@@ -34,7 +35,7 @@ export default function Sidebar({ isOpen, onClose }) {
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       {/* Brand */}
       <div className="sidebar-brand">
-        <img src="/korvil-logo.png" alt="Korvil" className="brand-logo" />
+        <img src={korvilLogo} alt="Korvil" className="brand-logo" />
         <div className="brand-info">
           <h2>TaskFlow</h2>
           <span>by Korvil</span>
