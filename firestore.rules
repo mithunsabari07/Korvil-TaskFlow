@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email.lower() == 'mithunsabari.rms@gmail.com' ||
+        request.auth.token.email.lower() == 'janaganmeenambikai@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    // --- Users Collection ---
+    match /users/{userId} {
+      // Authenticated users can view team members
+      allow read: if isAuthenticated();
+      // Users can write their own profile or admin can write any
+      allow create, update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // --- Tasks Collection ---
+    match /tasks/{taskId} {
+      // All authenticated users can read tasks (filtered by app UI)
+      allow read: if isAuthenticated();
+      
+      // Admins and authenticated users can create tasks
+      allow create: if isAuthenticated();
+      
+      // Admin can update anything.
+      // Employees can update tasks assigned to them or created by them (e.g., status changes)
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.assignedTo == request.auth.uid ||
+        resource.data.createdBy == request.auth.uid
+      );
+      
+      // Founder/Admin can delete ANY task.
+      // Employee can ONLY delete tasks they created themselves (cannot delete founder-created tasks)
+      allow delete: if isAuthenticated() && (
+        isAdmin() ||
+        (resource.data.createdBy == request.auth.uid && resource.data.createdByRole != 'admin')
+      );
+    }
+
+    // --- Registered Employees Allowlist ---
+    match /registered_employees/{employeeId} {
+      // Anyone authenticated can read to verify employee status
+      allow read: if isAuthenticated();
+      // Only admins can add or remove employees from the registry
+      allow write: if isAdmin();
+    }
+  }
+}
