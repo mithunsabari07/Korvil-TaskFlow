@@ -5,11 +5,12 @@ import { useUsers } from '../../hooks/useUsers';
 import { useToast } from '../../contexts/ToastContext';
 import ConfirmDialog from '../Common/ConfirmDialog';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
+import { Skeleton, SkeletonUserCard } from '../Common/Skeleton';
 
 export default function UserManagement() {
   useDocumentTitle('Team Members', 'Manage employees, register accounts, and view user details.');
   const { userProfile } = useAuth();
-  const { users, employees, addEmployee, updateEmployee, removeEmployee } = useUsers();
+  const { users, employees, loading: usersLoading, addEmployee, updateEmployee, removeEmployee } = useUsers();
   const toast = useToast();
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -66,6 +67,28 @@ export default function UserManagement() {
   function getInitials(name) {
     if (!name) return '?';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  }
+
+  if (usersLoading) {
+    return (
+      <>
+        <div className="page-header">
+          <div>
+            <h1>Team Members</h1>
+            <p className="header-subtitle">
+              <Skeleton width="180px" height="14px" />
+            </p>
+          </div>
+          <div className="header-actions">
+            <Skeleton width="130px" height="40px" borderRadius="var(--radius-md)" />
+          </div>
+        </div>
+
+        <div className="page-content">
+          <SkeletonUserCard count={4} />
+        </div>
+      </>
+    );
   }
 
   return (

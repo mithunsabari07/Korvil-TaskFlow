@@ -19,12 +19,13 @@ import { useToast } from '../../contexts/ToastContext';
 import TaskDeliverableModal from '../WorkSubmissions/TaskDeliverableModal';
 import ConfirmDialog from '../Common/ConfirmDialog';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
+import { Skeleton, SkeletonKPI, SkeletonTaskCard } from '../Common/Skeleton';
 
 export default function Dashboard() {
   useDocumentTitle('Dashboard', 'Real-time overview of tasks, team progress, and key productivity metrics.');
 
   const { userProfile, isAdmin } = useAuth();
-  const { tasks, toggleTaskStatus, changeTaskStatus, deleteTask } = useTasks();
+  const { tasks, loading, toggleTaskStatus, changeTaskStatus, deleteTask } = useTasks();
   const { users } = useUsers();
   const navigate = useNavigate();
   const toast = useToast();
@@ -85,6 +86,45 @@ export default function Dashboard() {
     } finally {
       setDeletingTask(null);
     }
+  }
+
+  if (loading) {
+    return (
+      <>
+        <div className="page-header">
+          <div>
+            <h1>
+              {getGreeting()}, {userProfile?.displayName?.split(' ')[0] || 'Team Member'} 👋
+            </h1>
+            <p className="header-subtitle">
+              <Skeleton width="180px" height="14px" />
+            </p>
+          </div>
+          <div className="header-actions">
+            <Skeleton width="120px" height="40px" borderRadius="var(--radius-md)" />
+          </div>
+        </div>
+
+        <div className="page-content">
+          <SkeletonKPI count={4} columns="kpi-grid-4" />
+
+          <div className="dashboard-task-columns" style={{ marginTop: 'var(--space-6)' }}>
+            <div>
+              <div className="task-section-header" style={{ marginBottom: 'var(--space-3)' }}>
+                <Skeleton width="160px" height="24px" />
+              </div>
+              <SkeletonTaskCard count={2} />
+            </div>
+            <div>
+              <div className="task-section-header" style={{ marginBottom: 'var(--space-3)' }}>
+                <Skeleton width="160px" height="24px" />
+              </div>
+              <SkeletonTaskCard count={2} />
+            </div>
+          </div>
+        </div>
+      </>
+    );
   }
 
   return (

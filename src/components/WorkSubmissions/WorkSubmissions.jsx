@@ -26,6 +26,7 @@ import { useWorkSubmissions, formatFileSize } from '../../hooks/useWorkSubmissio
 import { canReviewSubmissions } from '../../utils/permissions';
 import PdfViewerModal from './PdfViewerModal';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
+import { Skeleton, SkeletonKPI, SkeletonTable, SkeletonTaskCard } from '../Common/Skeleton';
 
 export default function WorkSubmissions() {
   useDocumentTitle('Work Submissions', 'Submit deliverables, upload revision documents, and manage administrative reviews.');
@@ -271,9 +272,38 @@ export default function WorkSubmissions() {
 
   if (loading) {
     return (
-      <div style={{ padding: 'var(--space-16)', textAlign: 'center' }}>
-        <div className="spinner" style={{ margin: '0 auto' }}></div>
-      </div>
+      <>
+        <div className="page-header">
+          <div>
+            <h1>Work Submissions</h1>
+            <p className="header-subtitle">
+              <Skeleton width="220px" height="14px" />
+            </p>
+          </div>
+        </div>
+
+        <div className="page-content">
+          {isReviewer ? (
+            <div>
+              <SkeletonKPI count={5} columns="kpi-grid-5" />
+              <div className="filter-bar" style={{ marginTop: 'var(--space-6)', pointerEvents: 'none' }}>
+                <Skeleton width="100%" height="42px" borderRadius="var(--radius-md)" />
+              </div>
+              <div style={{ marginTop: 'var(--space-4)' }}>
+                <SkeletonTable rows={5} cols={7} />
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="tabs" style={{ marginBottom: 'var(--space-6)', pointerEvents: 'none' }}>
+                <Skeleton width="180px" height="36px" borderRadius="var(--radius-full)" style={{ marginRight: 8 }} />
+                <Skeleton width="140px" height="36px" borderRadius="var(--radius-full)" />
+              </div>
+              <SkeletonTaskCard count={3} />
+            </div>
+          )}
+        </div>
+      </>
     );
   }
 

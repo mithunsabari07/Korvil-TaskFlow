@@ -6,11 +6,12 @@ import { useToast } from '../../contexts/ToastContext';
 import { PRIMARY_ADMIN_EMAIL } from '../../firebase/config';
 import ConfirmDialog from '../Common/ConfirmDialog';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
+import { Skeleton, SkeletonUserCard } from '../Common/Skeleton';
 
 export default function AdminSettings() {
   useDocumentTitle('Admin Settings', 'Manage administrator permissions and system configurations.');
   const { userProfile, isPrimaryAdmin } = useAuth();
-  const { users, addAdmin, removeAdmin, makeAdmin } = useUsers();
+  const { users, loading: usersLoading, addAdmin, removeAdmin, makeAdmin } = useUsers();
   const toast = useToast();
 
   const [showAddAdmin, setShowAddAdmin] = useState(false);
@@ -60,6 +61,37 @@ export default function AdminSettings() {
   function getInitials(name) {
     if (!name) return '?';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  }
+
+  if (usersLoading) {
+    return (
+      <>
+        <div className="page-header">
+          <div>
+            <h1><FiShield style={{ verticalAlign: 'middle' }} /> Admin Settings</h1>
+            <p className="header-subtitle">
+              <Skeleton width="180px" height="14px" />
+            </p>
+          </div>
+        </div>
+
+        <div className="page-content">
+          <div className="chart-container" style={{ marginBottom: 'var(--space-6)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
+              <Skeleton width="160px" height="24px" />
+            </div>
+            <SkeletonUserCard count={2} />
+          </div>
+
+          <div className="chart-container">
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
+              <Skeleton width="160px" height="24px" />
+            </div>
+            <SkeletonUserCard count={3} />
+          </div>
+        </div>
+      </>
+    );
   }
 
   return (

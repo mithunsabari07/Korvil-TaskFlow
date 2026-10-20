@@ -7,6 +7,7 @@ import TaskCard from './TaskCard';
 import TaskForm from './TaskForm';
 import ConfirmDialog from '../Common/ConfirmDialog';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
+import { Skeleton, SkeletonTaskCard } from '../Common/Skeleton';
 
 export default function PersonalTodos() {
   useDocumentTitle('Personal To-Dos', 'Manage individual to-do items and personal productivity goals.');
@@ -78,9 +79,28 @@ export default function PersonalTodos() {
 
   if (loading) {
     return (
-      <div style={{ padding: 'var(--space-16)', textAlign: 'center' }}>
-        <div className="spinner" style={{ margin: '0 auto' }}></div>
-      </div>
+      <>
+        <div className="page-header">
+          <div>
+            <h1>Personal To-Dos</h1>
+            <p className="header-subtitle">
+              <Skeleton width="160px" height="14px" />
+            </p>
+          </div>
+          <div className="header-actions">
+            <Skeleton width="120px" height="40px" borderRadius="var(--radius-md)" />
+          </div>
+        </div>
+
+        <div className="page-content">
+          <div style={{ marginTop: 'var(--space-4)' }}>
+            <div className="task-section-header" style={{ marginBottom: 'var(--space-3)' }}>
+              <Skeleton width="140px" height="24px" />
+            </div>
+            <SkeletonTaskCard count={3} />
+          </div>
+        </div>
+      </>
     );
   }
 

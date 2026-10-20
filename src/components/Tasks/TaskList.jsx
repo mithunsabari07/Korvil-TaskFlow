@@ -10,6 +10,7 @@ import TaskForm from './TaskForm';
 import ConfirmDialog from '../Common/ConfirmDialog';
 import TaskDeliverableModal from '../WorkSubmissions/TaskDeliverableModal';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
+import { Skeleton, SkeletonTaskCard } from '../Common/Skeleton';
 
 export default function TaskList() {
   useDocumentTitle('Tasks', 'View, track, and update assigned team tasks and deliverable milestones.');
@@ -158,9 +159,31 @@ export default function TaskList() {
 
   if (loading) {
     return (
-      <div style={{ padding: 'var(--space-16)', textAlign: 'center' }}>
-        <div className="spinner" style={{ margin: '0 auto' }}></div>
-      </div>
+      <>
+        <div className="page-header">
+          <div>
+            <h1>Tasks</h1>
+            <p className="header-subtitle">
+              <Skeleton width="180px" height="14px" />
+            </p>
+          </div>
+          <div className="header-actions">
+            <Skeleton width="130px" height="40px" borderRadius="var(--radius-md)" />
+          </div>
+        </div>
+
+        <div className="page-content">
+          <div className="filter-bar" style={{ pointerEvents: 'none' }}>
+            <Skeleton width="100%" height="42px" borderRadius="var(--radius-md)" />
+          </div>
+          <div style={{ marginTop: 'var(--space-6)' }}>
+            <div className="task-section-header" style={{ marginBottom: 'var(--space-3)' }}>
+              <Skeleton width="160px" height="24px" />
+            </div>
+            <SkeletonTaskCard count={4} />
+          </div>
+        </div>
+      </>
     );
   }
 

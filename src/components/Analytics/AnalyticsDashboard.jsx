@@ -34,12 +34,13 @@ import { useUsers } from '../../hooks/useUsers';
 import { useAnalytics } from '../../hooks/useAnalytics';
 import { getPriorityInfo, getStatusInfo, isTaskOverdue } from '../../utils/permissions';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
+import { Skeleton, SkeletonKPI, SkeletonChart } from '../Common/Skeleton';
 
 export default function AnalyticsDashboard() {
   useDocumentTitle('Analytics', 'Analytics for assigned tasks, completion rates, and personal productivity metrics.');
   const navigate = useNavigate();
   const { userProfile, isAdmin } = useAuth();
-  const { tasks } = useTasks();
+  const { tasks, loading } = useTasks();
   const { users } = useUsers();
 
   const [period, setPeriod] = useState('weekly');
@@ -116,6 +117,56 @@ export default function AnalyticsDashboard() {
       </div>
     );
   };
+  if (loading) {
+    return (
+      <>
+        <div className="page-header">
+          <div>
+            <h1>Analytics</h1>
+            <p className="header-subtitle">
+              Track assigned work, personal productivity, and task completion.
+            </p>
+          </div>
+        </div>
+
+        <div className="page-content">
+          <div className="analytics-controls-panel" style={{ pointerEvents: 'none', opacity: 0.8 }}>
+            <Skeleton width="280px" height="38px" borderRadius="var(--radius-full)" />
+          </div>
+
+          <section className="analytics-section">
+            <div className="section-header-block">
+              <Skeleton width="180px" height="22px" style={{ marginBottom: 8 }} />
+              <Skeleton width="280px" height="28px" style={{ marginBottom: 8 }} />
+              <Skeleton width="340px" height="14px" />
+            </div>
+
+            <SkeletonKPI count={6} columns="kpi-grid-6" />
+
+            <div className="analytics-chart-row" style={{ marginTop: 'var(--space-6)' }}>
+              <SkeletonChart height={280} />
+              <SkeletonChart height={280} />
+            </div>
+          </section>
+
+          <section className="analytics-section" style={{ marginTop: 'var(--space-8)' }}>
+            <div className="section-header-block">
+              <Skeleton width="180px" height="22px" style={{ marginBottom: 8 }} />
+              <Skeleton width="280px" height="28px" style={{ marginBottom: 8 }} />
+              <Skeleton width="340px" height="14px" />
+            </div>
+
+            <SkeletonKPI count={5} columns="kpi-grid-5" />
+
+            <div className="analytics-chart-row" style={{ marginTop: 'var(--space-6)' }}>
+              <SkeletonChart height={280} />
+              <SkeletonChart height={280} />
+            </div>
+          </section>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
