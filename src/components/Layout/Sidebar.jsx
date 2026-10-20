@@ -46,20 +46,23 @@ export default function Sidebar({ isOpen, onClose }) {
           onClick={onClose}
           aria-label="Go to Korvil TaskFlow Dashboard"
         >
-          <img
-            src={korvilLogo}
-            alt="Korvil TaskFlow logo"
-            className="brand-logo"
-            width="34"
-            height="34"
-            loading="eager"
-            onError={(e) => {
-              e.currentTarget.src = '/korvil-logo.png';
-            }}
-          />
+          <div className="sidebar-logo-badge" title="Korvil TaskFlow">
+            <img
+              src={korvilLogo}
+              alt="Korvil TaskFlow logo"
+              className="brand-logo"
+              width="32"
+              height="32"
+              loading="eager"
+              onError={(e) => {
+                const base = import.meta.env.BASE_URL || '/';
+                e.currentTarget.src = `${base}korvil-logo.png`.replace('//', '/');
+              }}
+            />
+          </div>
           <div className="brand-info">
             <h2>TaskFlow</h2>
-            <span>by Korvil</span>
+            <span>TEAM WORKSPACE</span>
           </div>
         </Link>
         <button
@@ -67,9 +70,8 @@ export default function Sidebar({ isOpen, onClose }) {
           className="btn btn-ghost btn-icon sidebar-close-btn"
           onClick={onClose}
           aria-label="Close navigation menu"
-          style={{ marginLeft: 'auto', display: isOpen ? 'flex' : 'none' }}
         >
-          <FiX />
+          <FiX size={18} />
         </button>
       </div>
 

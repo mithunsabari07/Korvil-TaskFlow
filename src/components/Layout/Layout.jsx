@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
-import { FiMenu, FiAlertTriangle } from 'react-icons/fi';
+import { FiMenu, FiX, FiAlertTriangle } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Layout() {
@@ -25,20 +25,22 @@ export default function Layout() {
       {/* Mobile Sidebar Toggle Button */}
       <button
         type="button"
-        className="sidebar-toggle"
+        id="sidebar-toggle-btn"
+        className={`sidebar-toggle ${sidebarOpen ? 'is-active' : ''}`}
         onClick={() => setSidebarOpen(prev => !prev)}
-        aria-label="Toggle navigation menu"
+        aria-label={sidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
         aria-expanded={sidebarOpen}
         aria-controls="app-sidebar"
       >
-        <FiMenu />
+        {sidebarOpen ? <FiX size={20} /> : <FiMenu size={20} />}
       </button>
 
       {/* Mobile Backdrop Overlay */}
       <div
+        id="sidebar-backdrop"
         className={`sidebar-backdrop ${sidebarOpen ? 'active' : ''}`}
         onClick={() => setSidebarOpen(false)}
-        aria-hidden="true"
+        aria-hidden={!sidebarOpen}
       />
 
       <Sidebar

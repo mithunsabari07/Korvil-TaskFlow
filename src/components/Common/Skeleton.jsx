@@ -46,15 +46,17 @@ export function SkeletonTaskCard({ count = 3 }) {
     <div className="skeleton-task-list" aria-busy="true" aria-label="Loading tasks...">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="task-card skeleton-card">
-          <Skeleton width="22px" height="22px" borderRadius="var(--radius-sm)" style={{ flexShrink: 0, marginTop: 2 }} />
-          <div className="task-card-content" style={{ width: '100%' }}>
-            <Skeleton width="55%" height="18px" style={{ marginBottom: 8 }} />
-            <Skeleton width="85%" height="13px" style={{ marginBottom: 6 }} />
-            <Skeleton width="70%" height="13px" style={{ marginBottom: 12 }} />
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <Skeleton width="60px" height="20px" borderRadius="var(--radius-full)" />
-              <Skeleton width="80px" height="20px" borderRadius="var(--radius-full)" />
-              <Skeleton width="90px" height="20px" borderRadius="var(--radius-full)" />
+          <div className="task-card-main">
+            <Skeleton width="22px" height="22px" borderRadius="var(--radius-sm)" style={{ flexShrink: 0, marginTop: 2 }} />
+            <div className="task-card-content" style={{ width: '100%' }}>
+              <Skeleton width="55%" height="18px" style={{ marginBottom: 8 }} />
+              <Skeleton width="85%" height="13px" style={{ marginBottom: 6 }} />
+              <Skeleton width="70%" height="13px" style={{ marginBottom: 12 }} />
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <Skeleton width="60px" height="20px" borderRadius="var(--radius-full)" />
+                <Skeleton width="80px" height="20px" borderRadius="var(--radius-full)" />
+                <Skeleton width="90px" height="20px" borderRadius="var(--radius-full)" />
+              </div>
             </div>
           </div>
           <div className="task-card-actions">
