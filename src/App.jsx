@@ -24,6 +24,10 @@ export default function App() {
       <AuthProvider>
         <ToastProvider>
           <Routes>
+            {/* Root Route — Redirect to dashboard (or login via ProtectedRoute) */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/index.html" element={<Navigate to="/dashboard" replace />} />
+
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
 
@@ -60,7 +64,7 @@ export default function App() {
               />
             </Route>
 
-            {/* 404 Not Found Route */}
+            {/* 404 Not Found Route — ONLY for genuinely invalid / error routes */}
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

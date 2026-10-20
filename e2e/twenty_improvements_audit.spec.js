@@ -137,4 +137,14 @@ test.describe('Korvil TaskFlow — 20 Essential Improvements Audit & Verificatio
     await backBtn.click();
     await expect(page).toHaveURL(/.*dashboard/);
   });
+
+  test('Visiting root URL / redirects to dashboard/login and does NOT show 404', async ({ page }) => {
+    await page.goto('/');
+    // Must NOT display 404
+    await expect(page.locator('.not-found-badge')).toHaveCount(0);
+    // Should be on dashboard
+    await expect(page).toHaveURL(/.*dashboard/);
+    await expect(page.locator('h1')).toBeVisible({ timeout: 10000 });
+  });
 });
+
