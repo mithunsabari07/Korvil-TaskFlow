@@ -17,16 +17,21 @@ import { useUsers } from '../../hooks/useUsers';
 import TaskCard from '../Tasks/TaskCard';
 import { useToast } from '../../contexts/ToastContext';
 import TaskDeliverableModal from '../WorkSubmissions/TaskDeliverableModal';
+import ConfirmDialog from '../Common/ConfirmDialog';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 export default function Dashboard() {
+  useDocumentTitle('Dashboard', 'Real-time overview of tasks, team progress, and key productivity metrics.');
+
   const { userProfile, isAdmin } = useAuth();
-  const { tasks, toggleTaskStatus, changeTaskStatus } = useTasks();
+  const { tasks, toggleTaskStatus, changeTaskStatus, deleteTask } = useTasks();
   const { users } = useUsers();
   const navigate = useNavigate();
   const toast = useToast();
 
   const [deliverableTask, setDeliverableTask] = useState(null);
   const [completionPromptTask, setCompletionPromptTask] = useState(null);
+  const [deletingTask, setDeletingTask] = useState(null);
 
   // Compute stats
   const stats = useMemo(() => {
@@ -70,12 +75,24 @@ export default function Dashboard() {
     }
   }
 
+  async function handleConfirmDelete() {
+    if (!deletingTask) return;
+    try {
+      await deleteTask(deletingTask.id);
+      toast.success('Task deleted successfully!');
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete task');
+    } finally {
+      setDeletingTask(null);
+    }
+  }
+
   return (
     <>
       <div className="page-header">
         <div>
           <h1>
-            {getGreeting()}, {userProfile?.displayName?.split(' ')[0]} 👋
+            {getGreeting()}, {userProfile?.displayName?.split(' ')[0] || 'Team Member'} 👋
           </h1>
           <p className="header-subtitle">
             {isAdmin
@@ -160,8 +177,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Quick Actions & Recent */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-6)' }}>
+        {/* Quick Actions & Recent Responsive Columns */}
+        <div className="dashboard-task-columns">
           {/* Urgent Tasks */}
           <div>
             <div className="task-section-header">
@@ -176,7 +193,7 @@ export default function Dashboard() {
                   key={task.id}
                   task={task}
                   onEdit={() => navigate('/tasks')}
-                  onDelete={() => {}}
+                  onDelete={setDeletingTask}
                   onToggle={handleToggle}
                   onStatusChange={handleStatusChange}
                   onViewSubmission={() => navigate('/work-submissions')}
@@ -206,7 +223,7 @@ export default function Dashboard() {
                   key={task.id}
                   task={task}
                   onEdit={() => navigate('/tasks')}
-                  onDelete={() => {}}
+                  onDelete={setDeletingTask}
                   onToggle={handleToggle}
                   onStatusChange={handleStatusChange}
                   onViewSubmission={() => navigate('/work-submissions')}
@@ -233,56 +250,71 @@ export default function Dashboard() {
               </button>
             </div>
             <div className="chart-container">
-              <table className="analytics-table">
-                <thead>
-                  <tr>
-                    <th>Member</th>
-                    <th>Total</th>
-                    <th>Completed</th>
-                    <th>Pending</th>
-                    <th>Progress</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map(user => {
-                    const userTasks = tasks.filter(t => t.assignedTo === user.uid && !t.isPersonalTodo);
-                    const completed = userTasks.filter(t => t.status === 'completed').length;
-                    const total = userTasks.length;
-                    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+              <div className="table-responsive-container">
+                <table className="analytics-table">
+                  <thead>
+                    <tr>
+                      <th>Member</th>
+                      <th>Total</th>
+                      <th>Completed</th>
+                      <th>Pending</th>
+                      <th>Progress</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map(user => {
+                      const userTasks = tasks.filter(t => t.assignedTo === user.uid && !t.isPersonalTodo);
+                      const completed = userTasks.filter(t => t.status === 'completed').length;
+                      const total = userTasks.length;
+                      const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-                    return (
-                      <tr key={user.uid}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div className="user-avatar" style={{ width: 28, height: 28, fontSize: '11px' }}>
-                              {user.photoURL ? (
-                                <img src={user.photoURL} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                              ) : (
-                                (user.displayName || user.email)?.[0]?.toUpperCase()
+                      return (
+                        <tr key={user.uid}>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div className="user-avatar" style={{ width: 28, height: 28, fontSize: '11px' }}>
+                                {user.photoURL ? (
+                                  <img
+                                    src={user.photoURL}
+                                    alt={user.displayName || 'Member'}
+                                    width="28"
+                                    height="28"
+                                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                                  />
+                                ) : (
+                                  (user.displayName || user.email)?.[0]?.toUpperCase()
+                                )}
+                              </div>
+                              <a
+                                href={`mailto:${user.email}`}
+                                className="email-link"
+                                style={{ color: 'var(--text-primary)', fontWeight: 500 }}
+                                title={`Email ${user.email}`}
+                              >
+                                {user.displayName || user.email}
+                              </a>
+                              {user.role === 'admin' && (
+                                <span className="role-badge admin" style={{ fontSize: '10px', padding: '1px 6px' }}>Admin</span>
                               )}
                             </div>
-                            <span>{user.displayName || user.email}</span>
-                            {user.role === 'admin' && (
-                              <span className="role-badge admin" style={{ fontSize: '10px', padding: '1px 6px' }}>Admin</span>
-                            )}
-                          </div>
-                        </td>
-                        <td>{total}</td>
-                        <td style={{ color: 'var(--success)' }}>{completed}</td>
-                        <td style={{ color: 'var(--warning)' }}>{total - completed}</td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div className="progress-bar-bg">
-                              <div className="progress-bar-fill" style={{ width: `${rate}%` }}></div>
+                          </td>
+                          <td>{total}</td>
+                          <td style={{ color: 'var(--success)' }}>{completed}</td>
+                          <td style={{ color: 'var(--warning)' }}>{total - completed}</td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div className="progress-bar-bg">
+                                <div className="progress-bar-fill" style={{ width: `${rate}%` }}></div>
+                              </div>
+                              <span style={{ fontSize: 'var(--font-sm)', color: 'var(--text-secondary)' }}>{rate}%</span>
                             </div>
-                            <span style={{ fontSize: 'var(--font-sm)', color: 'var(--text-secondary)' }}>{rate}%</span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -354,6 +386,18 @@ export default function Dashboard() {
           onSuccess={() => {
             setDeliverableTask(null);
           }}
+        />
+      )}
+
+      {/* Task Delete Confirmation Dialog */}
+      {deletingTask && (
+        <ConfirmDialog
+          title="Delete Task"
+          message={`Are you sure you want to delete "${deletingTask.title}"? This action cannot be undone.`}
+          confirmLabel="Delete Task"
+          variant="danger"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setDeletingTask(null)}
         />
       )}
     </>

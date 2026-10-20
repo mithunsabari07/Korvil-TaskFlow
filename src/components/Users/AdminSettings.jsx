@@ -5,8 +5,10 @@ import { useUsers } from '../../hooks/useUsers';
 import { useToast } from '../../contexts/ToastContext';
 import { PRIMARY_ADMIN_EMAIL } from '../../firebase/config';
 import ConfirmDialog from '../Common/ConfirmDialog';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 export default function AdminSettings() {
+  useDocumentTitle('Admin Settings', 'Manage administrator permissions and system configurations.');
   const { userProfile, isPrimaryAdmin } = useAuth();
   const { users, addAdmin, removeAdmin, makeAdmin } = useUsers();
   const toast = useToast();
@@ -73,7 +75,9 @@ export default function AdminSettings() {
         {!isPrimaryAdmin && (
           <div className="error-message" style={{ marginBottom: 'var(--space-6)', background: 'var(--warning-bg)', borderColor: 'var(--warning-border)', color: 'var(--warning)' }}>
             <FiAlertCircle />
-            <span>Only the primary admin ({PRIMARY_ADMIN_EMAIL}) can manage admin roles.</span>
+            <span>
+              Only the primary admin (<a href={`mailto:${PRIMARY_ADMIN_EMAIL}`} style={{ color: 'inherit', textDecoration: 'underline' }}>{PRIMARY_ADMIN_EMAIL}</a>) can manage admin roles.
+            </span>
           </div>
         )}
 
@@ -135,7 +139,11 @@ export default function AdminSettings() {
                       </span>
                     )}
                   </h3>
-                  <p>{user.email}</p>
+                  <p>
+                    <a href={`mailto:${user.email}`} className="email-link" title={`Email ${user.email}`}>
+                      {user.email}
+                    </a>
+                  </p>
                 </div>
                 {isPrimaryAdmin && user.email !== PRIMARY_ADMIN_EMAIL && (
                   <button
@@ -170,7 +178,11 @@ export default function AdminSettings() {
                   </div>
                   <div className="user-details">
                     <h3>{user.displayName || 'Unnamed'}</h3>
-                    <p>{user.email}</p>
+                    <p>
+                      <a href={`mailto:${user.email}`} className="email-link" title={`Email ${user.email}`}>
+                        {user.email}
+                      </a>
+                    </p>
                   </div>
                   <button
                     className="btn btn-success btn-sm"

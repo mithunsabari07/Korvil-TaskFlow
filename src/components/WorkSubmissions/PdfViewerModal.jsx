@@ -312,7 +312,7 @@ export default function PdfViewerModal({
                         href={submission.fileUrl}
                         download={submission.fileName || 'submission.pdf'}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="btn btn-primary btn-sm"
                       >
                         <FiDownload /> Download PDF
@@ -360,7 +360,13 @@ export default function PdfViewerModal({
                     </div>
                     <div>
                       <div className="info-val">{submission.employeeName}</div>
-                      <div className="info-subval">{submission.employeeEmail}</div>
+                      <a
+                        href={`mailto:${submission.employeeEmail}`}
+                        className="email-link info-subval"
+                        title={`Email ${submission.employeeEmail}`}
+                      >
+                        {submission.employeeEmail}
+                      </a>
                     </div>
                   </div>
                 </div>

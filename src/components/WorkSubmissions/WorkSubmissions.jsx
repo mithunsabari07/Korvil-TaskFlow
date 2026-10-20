@@ -25,8 +25,10 @@ import { useToast } from '../../contexts/ToastContext';
 import { useWorkSubmissions, formatFileSize } from '../../hooks/useWorkSubmissions';
 import { canReviewSubmissions } from '../../utils/permissions';
 import PdfViewerModal from './PdfViewerModal';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 export default function WorkSubmissions() {
+  useDocumentTitle('Work Submissions', 'Submit deliverables, upload revision documents, and manage administrative reviews.');
   const { userProfile } = useAuth();
   const { tasks } = useTasks();
   const { users } = useUsers();
@@ -459,7 +461,14 @@ export default function WorkSubmissions() {
                               </div>
                               <div>
                                 <div style={{ fontWeight: 500 }}>{sub.employeeName}</div>
-                                <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)' }}>{sub.employeeEmail}</div>
+                                <a
+                                  href={`mailto:${sub.employeeEmail}`}
+                                  className="email-link"
+                                  style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)' }}
+                                  title={`Email ${sub.employeeEmail}`}
+                                >
+                                  {sub.employeeEmail}
+                                </a>
                               </div>
                             </div>
                           </td>

@@ -4,8 +4,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useUsers } from '../../hooks/useUsers';
 import { useToast } from '../../contexts/ToastContext';
 import ConfirmDialog from '../Common/ConfirmDialog';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 export default function UserManagement() {
+  useDocumentTitle('Team Members', 'Manage employees, register accounts, and view user details.');
   const { userProfile } = useAuth();
   const { users, employees, addEmployee, updateEmployee, removeEmployee } = useUsers();
   const toast = useToast();
@@ -156,7 +158,11 @@ export default function UserManagement() {
                 </div>
                 <div className="user-details">
                   <h3>{user.displayName || 'Unnamed'}</h3>
-                  <p>{user.email}</p>
+                  <p>
+                    <a href={`mailto:${user.email}`} className="email-link" title={`Email ${user.email}`}>
+                      {user.email}
+                    </a>
+                  </p>
                 </div>
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <span className={`role-badge ${user.role}`}>

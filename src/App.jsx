@@ -11,6 +11,7 @@ import AnalyticsDashboard from './components/Analytics/AnalyticsDashboard';
 import WorkSubmissions from './components/WorkSubmissions/WorkSubmissions';
 import UserManagement from './components/Users/UserManagement';
 import AdminSettings from './components/Users/AdminSettings';
+import NotFound from './components/Common/NotFound';
 
 // Use HashRouter when hosted on GitHub Pages (*.github.io) so routing and refreshes never 404
 const Router = typeof window !== 'undefined' && window.location.hostname.endsWith('github.io')
@@ -59,8 +60,9 @@ export default function App() {
               />
             </Route>
 
-            {/* Default redirect */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* 404 Not Found Route */}
+            <Route path="/404" element={<NotFound />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </ToastProvider>
       </AuthProvider>

@@ -105,7 +105,22 @@ export default function TaskCard({ task, onEdit, onDelete, onToggle, onStatusCha
               title={`Created by ${task.createdByName || 'Admin'}`}
             >
               <FiUser size={11} style={{ marginRight: 2 }} />
-              Assigned to: <strong style={{ marginLeft: 3, color: 'var(--text-primary)' }}>{task.assignedToName || task.assignedToEmail || 'Team'}</strong>
+              Assigned to:{' '}
+              {task.assignedToEmail ? (
+                <a
+                  href={`mailto:${task.assignedToEmail}`}
+                  className="email-link"
+                  style={{ marginLeft: 3, fontWeight: 600, color: 'var(--text-primary)' }}
+                  title={`Email ${task.assignedToEmail}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {task.assignedToName || task.assignedToEmail}
+                </a>
+              ) : (
+                <strong style={{ marginLeft: 3, color: 'var(--text-primary)' }}>
+                  {task.assignedToName || 'Team'}
+                </strong>
+              )}
             </span>
           ) : (
             <span className="task-badge assigned">

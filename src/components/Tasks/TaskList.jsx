@@ -9,8 +9,10 @@ import TaskCard from './TaskCard';
 import TaskForm from './TaskForm';
 import ConfirmDialog from '../Common/ConfirmDialog';
 import TaskDeliverableModal from '../WorkSubmissions/TaskDeliverableModal';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 export default function TaskList() {
+  useDocumentTitle('Tasks', 'View, track, and update assigned team tasks and deliverable milestones.');
   const navigate = useNavigate();
   const { userProfile, isAdmin } = useAuth();
   const { tasks, loading, createTask, updateTask, toggleTaskStatus, changeTaskStatus, deleteTask } = useTasks();

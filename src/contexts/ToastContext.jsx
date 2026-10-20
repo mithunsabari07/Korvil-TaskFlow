@@ -28,9 +28,13 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={{ success, error, info }}>
       {children}
-      <div className="toast-container">
+      <div className="toast-container" aria-live="polite" aria-atomic="true">
         {toasts.map(toast => (
-          <div key={toast.id} className={`toast ${toast.type}`}>
+          <div
+            key={toast.id}
+            className={`toast ${toast.type}`}
+            role={toast.type === 'error' ? 'alert' : 'status'}
+          >
             <span>{toast.type === 'success' ? '✓' : toast.type === 'error' ? '✕' : 'ℹ'}</span>
             <span>{toast.message}</span>
           </div>

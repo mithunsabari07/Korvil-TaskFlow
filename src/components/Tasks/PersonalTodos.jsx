@@ -6,8 +6,10 @@ import { useToast } from '../../contexts/ToastContext';
 import TaskCard from './TaskCard';
 import TaskForm from './TaskForm';
 import ConfirmDialog from '../Common/ConfirmDialog';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 export default function PersonalTodos() {
+  useDocumentTitle('Personal To-Dos', 'Manage individual to-do items and personal productivity goals.');
   const { userProfile, isAdmin } = useAuth();
   const { tasks, loading, createTask, updateTask, toggleTaskStatus, changeTaskStatus, deleteTask } = useTasks();
   const toast = useToast();

@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import korvilLogo from '../../assets/logo';
 import { useWorkSubmissions } from '../../hooks/useWorkSubmissions';
@@ -37,24 +37,36 @@ export default function Sidebar({ isOpen, onClose }) {
   }
 
   return (
-    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
-      {/* Brand */}
+    <aside id="app-sidebar" className={`sidebar ${isOpen ? 'open' : ''}`} aria-label="Main Navigation">
+      {/* Brand & Clickable Logo */}
       <div className="sidebar-brand">
-        <img
-          src={korvilLogo}
-          alt="Korvil"
-          className="brand-logo"
-          onError={(e) => {
-            e.currentTarget.src = './korvil-logo.png';
-          }}
-        />
-        <div className="brand-info">
-          <h2>TaskFlow</h2>
-          <span>by Korvil</span>
-        </div>
-        <button
-          className="btn btn-ghost btn-icon"
+        <Link
+          to="/dashboard"
+          className="brand-logo-link"
           onClick={onClose}
+          aria-label="Go to Korvil TaskFlow Dashboard"
+        >
+          <img
+            src={korvilLogo}
+            alt="Korvil TaskFlow logo"
+            className="brand-logo"
+            width="34"
+            height="34"
+            loading="eager"
+            onError={(e) => {
+              e.currentTarget.src = '/korvil-logo.png';
+            }}
+          />
+          <div className="brand-info">
+            <h2>TaskFlow</h2>
+            <span>by Korvil</span>
+          </div>
+        </Link>
+        <button
+          type="button"
+          className="btn btn-ghost btn-icon sidebar-close-btn"
+          onClick={onClose}
+          aria-label="Close navigation menu"
           style={{ marginLeft: 'auto', display: isOpen ? 'flex' : 'none' }}
         >
           <FiX />
@@ -139,7 +151,13 @@ export default function Sidebar({ isOpen, onClose }) {
       <div className="sidebar-user">
         <div className="user-avatar">
           {userProfile?.photoURL ? (
-            <img src={userProfile.photoURL} alt={userProfile.displayName} />
+            <img
+              src={userProfile.photoURL}
+              alt={userProfile.displayName || 'User profile'}
+              width="36"
+              height="36"
+              loading="lazy"
+            />
           ) : (
             getInitials(userProfile?.displayName)
           )}
@@ -151,9 +169,11 @@ export default function Sidebar({ isOpen, onClose }) {
           </div>
         </div>
         <button
+          type="button"
           className="btn btn-ghost btn-icon"
           onClick={handleLogout}
           title="Sign out"
+          aria-label="Sign out"
         >
           <FiLogOut />
         </button>

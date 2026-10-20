@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import korvilLogo from '../../assets/logo';
+import Footer from '../Layout/Footer';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -11,6 +13,12 @@ export default function Login() {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useDocumentTitle(
+    isSignUp ? 'Create Account' : 'Sign In',
+    'Sign in to Korvil TaskFlow to track tasks, organize personal to-dos, and submit deliverables securely.',
+    false
+  );
 
   const { loginWithEmail, signupWithEmail, loginWithGoogle, currentUser, userProfile } = useAuth();
   const toast = useToast();
@@ -81,15 +89,18 @@ export default function Login() {
     <div className="login-page">
       <div className="login-container">
         <div className="login-brand">
-          <div className="logo-wrapper">
+          <Link to="/login" className="logo-wrapper" aria-label="Korvil TaskFlow Home">
             <img
               src={korvilLogo}
               alt="Korvil"
+              width="64"
+              height="64"
+              loading="eager"
               onError={(e) => {
-                e.currentTarget.src = './korvil-logo.png';
+                e.currentTarget.src = '/korvil-logo.png';
               }}
             />
-          </div>
+          </Link>
           <h1>Korvil TaskFlow</h1>
           <p>Smart task management for teams</p>
         </div>
@@ -98,7 +109,7 @@ export default function Login() {
           <h2>{isSignUp ? 'Create Account' : 'Welcome Back'}</h2>
 
           {error && (
-            <div className="error-message">
+            <div className="error-message" role="alert">
               <span>⚠</span>
               <span>{error}</span>
             </div>
@@ -116,6 +127,7 @@ export default function Login() {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   required={isSignUp}
+                  autoComplete="name"
                 />
               </div>
             )}
@@ -130,6 +142,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
               />
             </div>
 
@@ -144,6 +157,7 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
+                autoComplete={isSignUp ? 'new-password' : 'current-password'}
               />
             </div>
 
@@ -166,11 +180,12 @@ export default function Login() {
           <div className="divider">or</div>
 
           <button
+            type="button"
             className="btn-google"
             onClick={handleGoogleSignIn}
             disabled={loading}
           >
-            <svg width="20" height="20" viewBox="0 0 48 48">
+            <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
               <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
               <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
               <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
@@ -181,6 +196,7 @@ export default function Login() {
 
           <div style={{ textAlign: 'center', marginTop: '20px' }}>
             <button
+              type="button"
               className="btn btn-ghost"
               onClick={() => {
                 setIsSignUp(!isSignUp);
@@ -200,10 +216,17 @@ export default function Login() {
           marginTop: '24px',
           fontSize: 'var(--font-xs)',
           color: 'var(--text-muted)',
+          lineHeight: 1.6,
         }}>
           Only registered employees can access this platform.
-          <br />Contact your admin to get started.
+          <br />
+          Need an account?{' '}
+          <a href="mailto:support@korvil.com" className="email-link" style={{ color: 'var(--primary)', fontWeight: 600 }}>
+            Contact your administrator
+          </a>
         </p>
+
+        <Footer simple />
       </div>
     </div>
   );

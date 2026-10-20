@@ -33,8 +33,10 @@ import { useTasks } from '../../hooks/useTasks';
 import { useUsers } from '../../hooks/useUsers';
 import { useAnalytics } from '../../hooks/useAnalytics';
 import { getPriorityInfo, getStatusInfo, isTaskOverdue } from '../../utils/permissions';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 export default function AnalyticsDashboard() {
+  useDocumentTitle('Analytics', 'Analytics for assigned tasks, completion rates, and personal productivity metrics.');
   const navigate = useNavigate();
   const { userProfile, isAdmin } = useAuth();
   const { tasks } = useTasks();
