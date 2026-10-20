@@ -103,3 +103,60 @@ export function getStatusInfo(status) {
       return { label: status, className: '', color: '#64748B' };
   }
 }
+
+/**
+ * Get task priority display info
+ */
+export function getPriorityInfo(priority = 'medium') {
+  const p = (priority || 'medium').toLowerCase();
+  switch (p) {
+    case 'urgent':
+      return { label: 'Urgent', key: 'urgent', color: '#DC2626', bg: 'rgba(220, 38, 38, 0.12)', border: '#FCA5A5' };
+    case 'high':
+      return { label: 'High', key: 'high', color: '#EA580C', bg: 'rgba(234, 88, 12, 0.12)', border: '#FDBA74' };
+    case 'medium':
+      return { label: 'Medium', key: 'medium', color: '#015987', bg: 'rgba(1, 89, 135, 0.1)', border: '#93C5FD' };
+    case 'low':
+      return { label: 'Low', key: 'low', color: '#059669', bg: 'rgba(5, 150, 105, 0.1)', border: '#86EFAC' };
+    default:
+      return { label: 'Medium', key: 'medium', color: '#015987', bg: 'rgba(1, 89, 135, 0.1)', border: '#93C5FD' };
+  }
+}
+
+/**
+ * Check if a task is overdue
+ * Completed tasks are NEVER overdue
+ */
+export function isTaskOverdue(task) {
+  if (!task || task.status === 'completed' || !task.dueDate) return false;
+  try {
+    const due = new Date(task.dueDate);
+    if (isNaN(due.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return due < today;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if a task is classified as a personal to-do
+ */
+export function isPersonalTask(task) {
+  if (!task) return false;
+  return Boolean(task.isPersonalTodo || task.taskType === 'personal');
+}
+
+/**
+ * Check if user can review work submissions (Founder or Admin)
+ */
+export function canReviewSubmissions(userProfile) {
+  if (!userProfile) return false;
+  const email = userProfile.email?.toLowerCase();
+  return (
+    userProfile.role === 'admin' ||
+    email === 'janaganmeenambikai@gmail.com' ||
+    email === 'mithunsabari.rms@gmail.com'
+  );
+}

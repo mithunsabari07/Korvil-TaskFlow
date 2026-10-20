@@ -56,5 +56,40 @@ service cloud.firestore {
       // Only admins can add or remove employees from the registry
       allow write: if isAdmin();
     }
+
+    // --- Work Submissions Collection ---
+    match /workSubmissions/{submissionId} {
+      // Admins/Founders can view all submissions. Employees can only view their own submissions.
+      allow read: if isAuthenticated() && (
+        isAdmin() || resource.data.employeeUid == request.auth.uid
+      );
+
+      // Authenticated users can create their own submissions
+      allow create: if isAuthenticated() && (
+        request.resource.data.employeeUid == request.auth.uid || isAdmin()
+      );
+
+      // Admins can update any submission (review, status, comments).
+      // Employees can update only their own submissions (e.g. revisions, draft edits)
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        (resource.data.employeeUid == request.auth.uid && request.resource.data.employeeUid == request.auth.uid)
+      );
+
+      // Only admins or submission owners (if draft) can delete
+      allow delete: if isAuthenticated() && (
+        isAdmin() || (resource.data.employeeUid == request.auth.uid && resource.data.status == 'draft')
+      );
+    }
+
+    // --- Activity Log Collection ---
+    match /activity_log/{logId} {
+      // All authenticated users can read activity log entries
+      allow read: if isAuthenticated();
+      // All authenticated users can append activity log entries
+      allow create: if isAuthenticated();
+      // Only admins can update or delete audit logs
+      allow update, delete: if isAdmin();
+    }
   }
 }

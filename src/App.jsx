@@ -8,6 +8,7 @@ import Dashboard from './components/Dashboard/Dashboard';
 import TaskList from './components/Tasks/TaskList';
 import PersonalTodos from './components/Tasks/PersonalTodos';
 import AnalyticsDashboard from './components/Analytics/AnalyticsDashboard';
+import WorkSubmissions from './components/WorkSubmissions/WorkSubmissions';
 import UserManagement from './components/Users/UserManagement';
 import AdminSettings from './components/Users/AdminSettings';
 
@@ -36,6 +37,7 @@ export default function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/tasks" element={<TaskList />} />
               <Route path="/personal-todos" element={<PersonalTodos />} />
+              <Route path="/work-submissions" element={<WorkSubmissions />} />
               <Route path="/analytics" element={<AnalyticsDashboard />} />
 
               {/* Admin-only Routes */}

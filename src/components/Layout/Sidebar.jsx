@@ -1,12 +1,14 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import korvilLogo from '../../assets/logo';
+import { useWorkSubmissions } from '../../hooks/useWorkSubmissions';
 import {
   FiGrid,
   FiCheckSquare,
   FiUsers,
   FiBarChart2,
   FiList,
+  FiFileText,
   FiLogOut,
   FiShield,
   FiX,
@@ -14,7 +16,10 @@ import {
 
 export default function Sidebar({ isOpen, onClose }) {
   const { userProfile, isAdmin, logout } = useAuth();
+  const { awaitingCount, changesRequestedCount } = useWorkSubmissions();
   const navigate = useNavigate();
+
+  const badgeCount = isAdmin ? awaitingCount : changesRequestedCount;
 
   async function handleLogout() {
     await logout();
@@ -83,6 +88,19 @@ export default function Sidebar({ isOpen, onClose }) {
           >
             <span className="link-icon"><FiList /></span>
             Personal To-Dos
+          </NavLink>
+          <NavLink
+            to="/work-submissions"
+            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+            onClick={onClose}
+          >
+            <span className="link-icon"><FiFileText /></span>
+            Work Submissions
+            {badgeCount > 0 && (
+              <span className="nav-badge" title={isAdmin ? `${badgeCount} awaiting review` : `${badgeCount} updates`}>
+                {badgeCount}
+              </span>
+            )}
           </NavLink>
           <NavLink
             to="/analytics"

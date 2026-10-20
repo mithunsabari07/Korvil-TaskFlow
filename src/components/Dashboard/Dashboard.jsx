@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiCheckSquare,
@@ -8,12 +8,15 @@ import {
   FiPlus,
   FiArrowRight,
   FiZap,
+  FiUploadCloud,
+  FiX,
 } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTasks } from '../../hooks/useTasks';
 import { useUsers } from '../../hooks/useUsers';
 import TaskCard from '../Tasks/TaskCard';
 import { useToast } from '../../contexts/ToastContext';
+import TaskDeliverableModal from '../WorkSubmissions/TaskDeliverableModal';
 
 export default function Dashboard() {
   const { userProfile, isAdmin } = useAuth();
@@ -21,6 +24,9 @@ export default function Dashboard() {
   const { users } = useUsers();
   const navigate = useNavigate();
   const toast = useToast();
+
+  const [deliverableTask, setDeliverableTask] = useState(null);
+  const [completionPromptTask, setCompletionPromptTask] = useState(null);
 
   // Compute stats
   const stats = useMemo(() => {
@@ -48,12 +54,20 @@ export default function Dashboard() {
       .slice(0, 3);
   }, [tasks]);
 
-  async function handleToggle(taskId, status) {
-    await toggleTaskStatus(taskId, status);
+  async function handleToggle(taskId, currentStatus) {
+    const task = tasks.find(t => t.id === taskId);
+    await toggleTaskStatus(taskId, currentStatus);
+    if (currentStatus !== 'completed' && task && !task.isPersonalTodo && !task.hasSubmission) {
+      setCompletionPromptTask(task);
+    }
   }
 
   async function handleStatusChange(taskId, newStatus) {
+    const task = tasks.find(t => t.id === taskId);
     await changeTaskStatus(taskId, newStatus);
+    if (newStatus === 'completed' && task && !task.isPersonalTodo && !task.hasSubmission) {
+      setCompletionPromptTask(task);
+    }
   }
 
   return (
@@ -165,6 +179,8 @@ export default function Dashboard() {
                   onDelete={() => {}}
                   onToggle={handleToggle}
                   onStatusChange={handleStatusChange}
+                  onViewSubmission={() => navigate('/work-submissions')}
+                  onSubmitDeliverable={(t) => setDeliverableTask(t)}
                 />
               ))
             ) : (
@@ -193,6 +209,8 @@ export default function Dashboard() {
                   onDelete={() => {}}
                   onToggle={handleToggle}
                   onStatusChange={handleStatusChange}
+                  onViewSubmission={() => navigate('/work-submissions')}
+                  onSubmitDeliverable={(t) => setDeliverableTask(t)}
                 />
               ))
             ) : (
@@ -269,6 +287,75 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Completion Deliverable Prompt Modal */}
+      {completionPromptTask && (
+        <div className="modal-backdrop" onClick={() => setCompletionPromptTask(null)}>
+          <div
+            className="modal"
+            style={{ maxWidth: 480 }}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="modal-header">
+              <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--font-lg)' }}>
+                <span style={{ fontSize: '1.4rem' }}>🎉</span> Task Completed!
+              </h2>
+              <button
+                type="button"
+                className="btn-icon"
+                onClick={() => setCompletionPromptTask(null)}
+                aria-label="Close"
+              >
+                <FiX />
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: 'var(--space-5) var(--space-6)' }}>
+              <p style={{ margin: 0, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>
+                "{completionPromptTask.title}"
+              </p>
+              <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 'var(--font-sm)', lineHeight: 1.5 }}>
+                Would you like to upload your work deliverable (PDF file) for founder or admin review?
+                <br />
+                <strong>Note:</strong> This is optional — you can upload your PDF deliverable now or keep the task completed without uploading.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setCompletionPromptTask(null)}
+              >
+                Just Complete (Skip)
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  const t = completionPromptTask;
+                  setCompletionPromptTask(null);
+                  setDeliverableTask(t);
+                }}
+              >
+                <FiUploadCloud /> Upload PDF Deliverable
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Deliverable Upload Modal */}
+      {deliverableTask && (
+        <TaskDeliverableModal
+          task={deliverableTask}
+          isOpen={!!deliverableTask}
+          onClose={() => setDeliverableTask(null)}
+          onSuccess={() => {
+            setDeliverableTask(null);
+          }}
+        />
+      )}
     </>
   );
 }

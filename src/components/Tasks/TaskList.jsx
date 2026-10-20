@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { FiPlus, FiSearch, FiFilter } from 'react-icons/fi';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { FiPlus, FiSearch, FiFilter, FiUploadCloud, FiX } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTasks } from '../../hooks/useTasks';
 import { useUsers } from '../../hooks/useUsers';
@@ -8,8 +8,10 @@ import { useToast } from '../../contexts/ToastContext';
 import TaskCard from './TaskCard';
 import TaskForm from './TaskForm';
 import ConfirmDialog from '../Common/ConfirmDialog';
+import TaskDeliverableModal from '../WorkSubmissions/TaskDeliverableModal';
 
 export default function TaskList() {
+  const navigate = useNavigate();
   const { userProfile, isAdmin } = useAuth();
   const { tasks, loading, createTask, updateTask, toggleTaskStatus, changeTaskStatus, deleteTask } = useTasks();
   const { users } = useUsers();
@@ -21,6 +23,8 @@ export default function TaskList() {
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [deletingTask, setDeletingTask] = useState(null);
+  const [deliverableTask, setDeliverableTask] = useState(null);
+  const [completionPromptTask, setCompletionPromptTask] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState(statusParam || 'all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
@@ -107,11 +111,20 @@ export default function TaskList() {
   }
 
   async function handleToggle(taskId, currentStatus) {
+    const task = tasks.find(t => t.id === taskId);
     await toggleTaskStatus(taskId, currentStatus);
+    // If marking as completed, offer optional deliverable PDF upload for assigned work
+    if (currentStatus !== 'completed' && task && !task.isPersonalTodo && !task.hasSubmission) {
+      setCompletionPromptTask(task);
+    }
   }
 
   async function handleStatusChange(taskId, newStatus) {
+    const task = tasks.find(t => t.id === taskId);
     await changeTaskStatus(taskId, newStatus);
+    if (newStatus === 'completed' && task && !task.isPersonalTodo && !task.hasSubmission) {
+      setCompletionPromptTask(task);
+    }
   }
 
   function renderTaskGroup(title, taskList, emoji) {
@@ -132,6 +145,8 @@ export default function TaskList() {
               onDelete={setDeletingTask}
               onToggle={handleToggle}
               onStatusChange={handleStatusChange}
+              onViewSubmission={() => navigate('/work-submissions')}
+              onSubmitDeliverable={(t) => setDeliverableTask(t)}
             />
           </div>
         ))}
@@ -256,6 +271,65 @@ export default function TaskList() {
           variant="danger"
           onConfirm={handleDeleteTask}
           onCancel={() => setDeletingTask(null)}
+        />
+      )}
+
+      {/* Optional Completion Deliverable Prompt Modal */}
+      {completionPromptTask && (
+        <div className="modal-overlay" onClick={() => setCompletionPromptTask(null)}>
+          <div className="modal" style={{ maxWidth: 460 }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.3rem' }}>🎉</span>
+                <h3>Task Completed!</h3>
+              </div>
+              <button className="btn btn-ghost btn-icon" onClick={() => setCompletionPromptTask(null)}>
+                <FiX />
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ fontSize: 'var(--font-sm)', color: 'var(--text-primary)', fontWeight: 500, marginBottom: 'var(--space-2)' }}>
+                "{completionPromptTask.title}" is now marked as complete.
+              </p>
+              <p style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                Would you like to upload your work deliverable (PDF file) for founder or admin review?
+                <br />
+                <strong>Note:</strong> This is optional — you can upload your PDF deliverable now or keep the task completed without uploading.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setCompletionPromptTask(null)}
+              >
+                Just Complete (Skip)
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  const t = completionPromptTask;
+                  setCompletionPromptTask(null);
+                  setDeliverableTask(t);
+                }}
+              >
+                <FiUploadCloud /> Upload PDF Deliverable
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Deliverable Upload Modal */}
+      {deliverableTask && (
+        <TaskDeliverableModal
+          task={deliverableTask}
+          isOpen={!!deliverableTask}
+          onClose={() => setDeliverableTask(null)}
+          onSuccess={() => {
+            setDeliverableTask(null);
+          }}
         />
       )}
     </>

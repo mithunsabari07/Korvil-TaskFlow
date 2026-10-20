@@ -3,7 +3,6 @@ import {
   startOfDay,
   startOfWeek,
   startOfMonth,
-  isAfter,
   isWithinInterval,
   endOfDay,
   endOfWeek,
@@ -14,33 +13,154 @@ import {
   format,
   eachDayOfInterval,
   eachWeekOfInterval,
+  parseISO,
+  isBefore,
 } from 'date-fns';
+import { isPersonalTask, isTaskOverdue } from '../utils/permissions';
 
 /**
- * Compute analytics data from tasks
- * @param {Array} tasks - Array of task objects
- * @param {string} period - 'daily' | 'weekly' | 'monthly'
- * @param {Array} users - Array of user objects (for admin view)
- * @returns {Object} analytics data
+ * Safely parse a date from Firestore Timestamp, ISO string, or Date object
  */
-export function useAnalytics(tasks, period = 'weekly', users = []) {
-  return useMemo(() => {
-    if (!tasks || tasks.length === 0) {
-      return {
-        totalTasks: 0,
-        completedTasks: 0,
-        pendingTasks: 0,
-        inProgressTasks: 0,
-        completionRate: 0,
-        chartData: [],
-        employeeStats: [],
-      };
-    }
+function toDate(val) {
+  if (!val) return null;
+  if (typeof val.toDate === 'function') return val.toDate();
+  if (typeof val.toMillis === 'function') return new Date(val.toMillis());
+  if (val instanceof Date) return val;
+  try {
+    const parsed = new Date(val);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  } catch {
+    return null;
+  }
+}
 
+/**
+ * Build analytics dataset for a specific task subset (Assigned or Personal)
+ */
+function buildTaskAnalytics(taskList, interval, datePoints, users = [], isPersonal = false) {
+  const { startDate, endDate } = interval;
+
+  // Total dataset
+  const totalTasks = taskList.length;
+  const completedTasks = taskList.filter(t => t.status === 'completed').length;
+  const overdueTasks = taskList.filter(t => isTaskOverdue(t)).length;
+  // Non-overdue in-progress and pending
+  const inProgressTasks = taskList.filter(t => t.status === 'in-progress' && !isTaskOverdue(t)).length;
+  const pendingTasks = taskList.filter(t => t.status === 'todo' && !isTaskOverdue(t)).length;
+
+  // Independent Completion Rate calculation
+  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  // Status Distribution Donut Chart Data
+  // Each task is counted in exactly one category
+  const statusData = [
+    { name: 'Completed', value: completedTasks, color: '#16A34A' },
+    { name: 'In Progress', value: inProgressTasks, color: '#0284C7' },
+    { name: 'Pending', value: pendingTasks, color: '#D97706' },
+    { name: 'Overdue', value: overdueTasks, color: '#DC2626' },
+  ].filter(d => d.value > 0);
+
+  // Priority Bar Chart Data (Low, Medium, High, Urgent)
+  const priorityCounts = { low: 0, medium: 0, high: 0, urgent: 0 };
+  taskList.forEach(t => {
+    const p = (t.priority || 'medium').toLowerCase();
+    if (priorityCounts[p] !== undefined) {
+      priorityCounts[p]++;
+    } else {
+      priorityCounts.medium++;
+    }
+  });
+
+  const priorityData = [
+    { name: 'Low', count: priorityCounts.low, fill: '#059669' },
+    { name: 'Medium', count: priorityCounts.medium, fill: '#015987' },
+    { name: 'High', count: priorityCounts.high, fill: '#EA580C' },
+    { name: 'Urgent', count: priorityCounts.urgent, fill: '#DC2626' },
+  ];
+
+  // Trend Chart Data (Line chart over the reporting period)
+  const trendData = datePoints.map(point => {
+    const createdCount = taskList.filter(t => {
+      const d = toDate(t.createdAt);
+      return d && isWithinInterval(d, { start: point.start, end: point.end });
+    }).length;
+
+    const completedCount = taskList.filter(t => {
+      if (t.status !== 'completed') return false;
+      const d = toDate(t.completedAt) || toDate(t.updatedAt) || toDate(t.createdAt);
+      return d && isWithinInterval(d, { start: point.start, end: point.end });
+    }).length;
+
+    return {
+      name: point.label,
+      fullDate: point.fullDate,
+      created: createdCount,
+      completed: completedCount,
+    };
+  });
+
+  // Employee breakdown for Team views
+  const employeeStats = users.map(user => {
+    const uUid = user.uid;
+    const uEmail = user.email?.toLowerCase();
+
+    const userTasks = taskList.filter(t => 
+      t.assignedTo === uUid ||
+      t.assignedTo?.toLowerCase() === uEmail ||
+      t.assignedToEmail?.toLowerCase() === uEmail ||
+      (isPersonal && t.createdBy === uUid)
+    );
+
+    const userCompleted = userTasks.filter(t => t.status === 'completed').length;
+    const userOverdue = userTasks.filter(t => isTaskOverdue(t)).length;
+    const userInProgress = userTasks.filter(t => t.status === 'in-progress' && !isTaskOverdue(t)).length;
+    const userPending = userTasks.filter(t => t.status === 'todo' && !isTaskOverdue(t)).length;
+    const userRate = userTasks.length > 0 ? Math.round((userCompleted / userTasks.length) * 100) : 0;
+
+    return {
+      uid: user.uid,
+      name: user.displayName || user.email,
+      email: user.email,
+      photoURL: user.photoURL,
+      role: user.role,
+      total: userTasks.length,
+      completed: userCompleted,
+      inProgress: userInProgress,
+      pending: userPending,
+      overdue: userOverdue,
+      rate: userRate,
+    };
+  }).filter(e => e.total > 0 || users.length <= 10).sort((a, b) => b.total - a.total);
+
+  return {
+    totalTasks,
+    completedTasks,
+    inProgressTasks,
+    pendingTasks,
+    overdueTasks,
+    completionRate,
+    statusData,
+    priorityData,
+    trendData,
+    taskDetails: taskList,
+    employeeStats,
+  };
+}
+
+/**
+ * Compute independent analytics data for both Assigned Tasks and Personal To-Dos
+ * @param {Array} tasks - Raw array of task objects from Firestore
+ * @param {string} period - 'daily' | 'weekly' | 'monthly' | 'custom'
+ * @param {Array} users - Array of team members
+ * @param {Object} customRange - { startDate: Date|string, endDate: Date|string }
+ * @returns {Object} { assigned: Object, personal: Object }
+ */
+export function useAnalytics(tasks = [], period = 'weekly', users = [], customRange = null) {
+  return useMemo(() => {
     const now = new Date();
     let startDate, endDate;
 
-    // Determine date range
+    // Determine interval
     switch (period) {
       case 'daily':
         startDate = subDays(startOfDay(now), 6); // Last 7 days
@@ -54,131 +174,92 @@ export function useAnalytics(tasks, period = 'weekly', users = []) {
         startDate = subMonths(startOfMonth(now), 5); // Last 6 months
         endDate = endOfMonth(now);
         break;
+      case 'custom':
+        if (customRange?.startDate && customRange?.endDate) {
+          const s = typeof customRange.startDate === 'string' ? parseISO(customRange.startDate) : customRange.startDate;
+          const e = typeof customRange.endDate === 'string' ? parseISO(customRange.endDate) : customRange.endDate;
+          startDate = startOfDay(s);
+          endDate = endOfDay(e);
+        } else {
+          startDate = subDays(startOfDay(now), 29); // Last 30 days default
+          endDate = endOfDay(now);
+        }
+        break;
       default:
-        startDate = subDays(startOfDay(now), 6);
-        endDate = endOfDay(now);
+        startDate = subWeeks(startOfWeek(now, { weekStartsOn: 1 }), 3);
+        endDate = endOfWeek(now, { weekStartsOn: 1 });
     }
 
-    // Filter tasks within period
-    const filteredTasks = tasks.filter(task => {
-      const taskDate = task.createdAt?.toDate?.() || new Date(task.createdAt);
-      return isWithinInterval(taskDate, { start: startDate, end: endDate });
-    });
-
-    // Overall stats
-    const totalTasks = tasks.length;
-    const completedTasks = tasks.filter(t => t.status === 'completed').length;
-    const pendingTasks = tasks.filter(t => t.status === 'todo').length;
-    const inProgressTasks = tasks.filter(t => t.status === 'in-progress').length;
-    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-    // Generate chart data based on period
-    let chartData = [];
-    
+    // Generate date points for trend charts
+    let datePoints = [];
     if (period === 'daily') {
       const days = eachDayOfInterval({ start: startDate, end: endDate });
-      chartData = days.map(day => {
-        const dayStart = startOfDay(day);
-        const dayEnd = endOfDay(day);
-        
-        const assigned = tasks.filter(t => {
-          const d = t.createdAt?.toDate?.() || new Date(t.createdAt);
-          return isWithinInterval(d, { start: dayStart, end: dayEnd });
-        }).length;
-        
-        const completed = tasks.filter(t => {
-          if (t.status !== 'completed' || !t.completedAt) return false;
-          const d = t.completedAt?.toDate?.() || new Date(t.completedAt);
-          return isWithinInterval(d, { start: dayStart, end: dayEnd });
-        }).length;
-        
-        return {
-          name: format(day, 'EEE'),
-          fullDate: format(day, 'MMM dd'),
-          assigned,
-          completed,
-        };
-      });
+      datePoints = days.map(day => ({
+        label: format(day, 'EEE'),
+        fullDate: format(day, 'MMM dd, yyyy'),
+        start: startOfDay(day),
+        end: endOfDay(day),
+      }));
     } else if (period === 'weekly') {
-      const weeks = eachWeekOfInterval(
-        { start: startDate, end: endDate },
-        { weekStartsOn: 1 }
-      );
-      chartData = weeks.map((weekStart, i) => {
+      const weeks = eachWeekOfInterval({ start: startDate, end: endDate }, { weekStartsOn: 1 });
+      datePoints = weeks.map((weekStart, i) => {
         const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
-        
-        const assigned = tasks.filter(t => {
-          const d = t.createdAt?.toDate?.() || new Date(t.createdAt);
-          return isWithinInterval(d, { start: weekStart, end: weekEnd });
-        }).length;
-        
-        const completed = tasks.filter(t => {
-          if (t.status !== 'completed' || !t.completedAt) return false;
-          const d = t.completedAt?.toDate?.() || new Date(t.completedAt);
-          return isWithinInterval(d, { start: weekStart, end: weekEnd });
-        }).length;
-        
         return {
-          name: `Week ${i + 1}`,
+          label: `Wk ${i + 1}`,
           fullDate: `${format(weekStart, 'MMM dd')} - ${format(weekEnd, 'MMM dd')}`,
-          assigned,
-          completed,
+          start: weekStart,
+          end: weekEnd,
         };
       });
-    } else {
-      // Monthly
+    } else if (period === 'monthly') {
       for (let i = 5; i >= 0; i--) {
-        const monthStart = startOfMonth(subMonths(now, i));
-        const monthEnd = endOfMonth(subMonths(now, i));
-        
-        const assigned = tasks.filter(t => {
-          const d = t.createdAt?.toDate?.() || new Date(t.createdAt);
-          return isWithinInterval(d, { start: monthStart, end: monthEnd });
-        }).length;
-        
-        const completed = tasks.filter(t => {
-          if (t.status !== 'completed' || !t.completedAt) return false;
-          const d = t.completedAt?.toDate?.() || new Date(t.completedAt);
-          return isWithinInterval(d, { start: monthStart, end: monthEnd });
-        }).length;
-        
-        chartData.push({
-          name: format(monthStart, 'MMM'),
-          fullDate: format(monthStart, 'MMMM yyyy'),
-          assigned,
-          completed,
+        const mStart = startOfMonth(subMonths(now, i));
+        const mEnd = endOfMonth(subMonths(now, i));
+        datePoints.push({
+          label: format(mStart, 'MMM'),
+          fullDate: format(mStart, 'MMMM yyyy'),
+          start: mStart,
+          end: mEnd,
+        });
+      }
+    } else {
+      // Custom date range: generate appropriate intervals
+      const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+      if (diffDays <= 14) {
+        const days = eachDayOfInterval({ start: startDate, end: endDate });
+        datePoints = days.map(day => ({
+          label: format(day, 'MMM dd'),
+          fullDate: format(day, 'MMM dd, yyyy'),
+          start: startOfDay(day),
+          end: endOfDay(day),
+        }));
+      } else {
+        const weeks = eachWeekOfInterval({ start: startDate, end: endDate }, { weekStartsOn: 1 });
+        datePoints = weeks.map((weekStart, i) => {
+          const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+          return {
+            label: `Wk ${i + 1}`,
+            fullDate: `${format(weekStart, 'MMM dd')} - ${format(weekEnd, 'MMM dd')}`,
+            start: weekStart,
+            end: weekEnd,
+          };
         });
       }
     }
 
-    // Employee breakdown stats (for admin view)
-    const employeeStats = users.map(user => {
-      const userTasks = tasks.filter(t => t.assignedTo === user.uid);
-      const userCompleted = userTasks.filter(t => t.status === 'completed').length;
-      const userPending = userTasks.filter(t => t.status === 'todo').length;
-      const userInProgress = userTasks.filter(t => t.status === 'in-progress').length;
-      
-      return {
-        uid: user.uid,
-        name: user.displayName || user.email,
-        email: user.email,
-        photoURL: user.photoURL,
-        total: userTasks.length,
-        completed: userCompleted,
-        pending: userPending,
-        inProgress: userInProgress,
-        rate: userTasks.length > 0 ? Math.round((userCompleted / userTasks.length) * 100) : 0,
-      };
-    }).sort((a, b) => b.total - a.total);
+    const interval = { startDate, endDate };
+
+    // Separate datasets strictly
+    const assignedTasks = tasks.filter(t => !isPersonalTask(t));
+    const personalTasks = tasks.filter(t => isPersonalTask(t));
+
+    const assignedAnalytics = buildTaskAnalytics(assignedTasks, interval, datePoints, users, false);
+    const personalAnalytics = buildTaskAnalytics(personalTasks, interval, datePoints, users, true);
 
     return {
-      totalTasks,
-      completedTasks,
-      pendingTasks,
-      inProgressTasks,
-      completionRate,
-      chartData,
-      employeeStats,
+      assigned: assignedAnalytics,
+      personal: personalAnalytics,
+      dateRange: { startDate, endDate },
     };
-  }, [tasks, period, users]);
+  }, [tasks, period, users, customRange]);
 }

@@ -11,6 +11,8 @@ export default function TaskForm({ task, onSubmit, onClose, isPersonalTodo = fal
   const [description, setDescription] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [assignedToName, setAssignedToName] = useState('');
+  const [priority, setPriority] = useState('medium');
+  const [dueDate, setDueDate] = useState('');
   const [loading, setLoading] = useState(false);
 
   const isEditing = !!task;
@@ -24,10 +26,14 @@ export default function TaskForm({ task, onSubmit, onClose, isPersonalTodo = fal
       setAssignedTo(task.assignedTo || '');
       setAssignedToName(task.assignedToName || '');
       setAssignedToEmail(task.assignedToEmail || '');
+      setPriority(task.priority || 'medium');
+      setDueDate(task.dueDate || '');
     } else {
       setAssignedTo(userProfile?.uid || '');
       setAssignedToName(userProfile?.displayName || '');
       setAssignedToEmail(userProfile?.email || '');
+      setPriority('medium');
+      setDueDate('');
     }
   }, [task, userProfile]);
 
@@ -48,10 +54,13 @@ export default function TaskForm({ task, onSubmit, onClose, isPersonalTodo = fal
       await onSubmit({
         title: title.trim(),
         description: description.trim(),
+        priority,
+        dueDate: dueDate || null,
         assignedTo: isPersonalTodo ? userProfile.uid : (assignedTo || userProfile.uid),
         assignedToEmail: isPersonalTodo ? userProfile.email : (assignedToEmail || (assignedTo?.includes('@') ? assignedTo : userProfile.email)),
         assignedToName: isPersonalTodo ? userProfile.displayName : (assignedToName || userProfile.displayName),
         isPersonalTodo,
+        taskType: isPersonalTodo ? 'personal' : 'assigned',
       });
       onClose();
     } catch (err) {
@@ -106,6 +115,35 @@ export default function TaskForm({ task, onSubmit, onClose, isPersonalTodo = fal
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
               />
+            </div>
+
+            {/* Priority and Due Date Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+              <div className="form-group">
+                <label htmlFor="task-priority">Priority</label>
+                <select
+                  id="task-priority"
+                  className="form-select"
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                >
+                  <option value="low">🟢 Low</option>
+                  <option value="medium">🔵 Medium</option>
+                  <option value="high">🟠 High</option>
+                  <option value="urgent">🔴 Urgent</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="task-due-date">Due Date</label>
+                <input
+                  id="task-due-date"
+                  type="date"
+                  className="form-input"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
+              </div>
             </div>
 
             {/* Assign to someone (admin only, not for personal todos) */}

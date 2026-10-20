@@ -1,0 +1,23 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email.lower() == 'mithunsabari.rms@gmail.com' ||
+        request.auth.token.email.lower() == 'janaganmeenambikai@gmail.com'
+      );
+    }
+
+    // PDF files stored at work-submissions/{employeeUid}/{submissionId}/...
+    match /work-submissions/{employeeUid}/{allPaths=**} {
+      // Employees can read their own uploaded documents; admins can read all
+      allow read: if isAuthenticated() && (request.auth.uid == employeeUid || isAdmin());
+      // Employees can write to their own folder; admins can write
+      allow write: if isAuthenticated() && (request.auth.uid == employeeUid || isAdmin());
+    }
+  }
+}

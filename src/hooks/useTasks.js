@@ -83,17 +83,22 @@ export function useTasks(filterOptions = {}) {
       (assignedToVal.includes('@') ? assignedToVal : userProfile.email)
     )?.toLowerCase();
 
+    const isPersonal = Boolean(taskData.isPersonalTodo || taskData.taskType === 'personal');
+
     const newTask = {
       title: taskData.title,
       description: taskData.description || '',
       status: 'todo',
+      priority: taskData.priority || 'medium',
+      dueDate: taskData.dueDate || null,
+      taskType: isPersonal ? 'personal' : 'assigned',
+      isPersonalTodo: isPersonal,
       assignedTo: assignedToVal,
       assignedToEmail: assignedToEmailVal || '',
       assignedToName: taskData.assignedToName || userProfile.displayName,
       createdBy: userProfile.uid,
       createdByName: userProfile.displayName,
       createdByRole: userProfile.role || 'employee',
-      isPersonalTodo: Boolean(taskData.isPersonalTodo),
       completedAt: null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

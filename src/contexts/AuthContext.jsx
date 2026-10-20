@@ -271,6 +271,14 @@ export function AuthProvider({ children }) {
 
   // Listen for auth state changes
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.__KORVIL_TEST_USER__) {
+      const testUser = window.__KORVIL_TEST_USER__;
+      setCurrentUser(testUser);
+      setUserProfile(testUser);
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
